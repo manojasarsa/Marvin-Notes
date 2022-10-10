@@ -1,0 +1,64 @@
+<style>
+  html {
+    background-color: "#edeff2";
+  }
+  h2 {
+    color: #131928;
+  }
+  .main-container {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  .btn-container {
+    margin-top: 2rem;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+  }
+  button {
+    background-color: #fb3569;
+    color: #ffffff;
+    padding: 5px 10px;
+    text-decoration: none;
+    border: none;
+    border-radius: 8px;
+  }
+  #url {
+    width: 80%;
+    padding: 8px 8px;
+    border: 1px solid #edeff2;
+    border-radius: 4px;
+  }
+</style>
+
+<div class="main-container">
+  <h2>Import from Marvin</h2>
+ <input id="url" type="url" placeholder="Paste the Marvin Notes link" />
+  <div class="btn-container">
+    <button id="create">Show Notes</button>
+    <button id="cancel">Cancel</button>
+  </div>
+</div>
+
+<script>
+  document.getElementById("create").onclick = () => {
+    const url = document.getElementById("url").value;
+
+    const result = fetch(url)
+      .then((data) => data.json())
+      .then((notes) => {
+        
+        parent.postMessage(
+          { pluginMessage: { type: "create-notes", notes } },
+          "*"
+        );
+      });
+  };
+
+  document.getElementById("cancel").onclick = () => {
+    parent.postMessage({ pluginMessage: { type: "cancel" } }, "*");
+  };
+</script>
