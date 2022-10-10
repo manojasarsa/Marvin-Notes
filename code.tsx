@@ -100,17 +100,18 @@ function Widget() {
       {notes.map((note, data) => (
         <AutoLayout
           verticalAlignItems="center"
-          cornerRadius={8}
+          cornerRadius={16}
           spacing={48}
           direction="vertical"
           width={800}
           height={400}
-          // horizontalAlignItems="center"
           strokeWidth={2}
           fill={"#f7f8fa"}
           hoverStyle={{ stroke: "#dce0e6", fill: "#fb3569" }}
           stroke="#dce0e6"
           strokeAlign="center"
+          // horizontalAlignItems="center"
+          key={note.id}
         >
           <AutoLayout
             padding={{
@@ -122,7 +123,7 @@ function Widget() {
             width={"hug-contents"}
             height={"hug-contents"}
           >
-            <Text>{note.title}</Text>
+            <Text fontSize={32}>{note.title}</Text>
           </AutoLayout>
           <AutoLayout
             spacing={24}
@@ -134,7 +135,7 @@ function Widget() {
             width={"fill-parent"}
             height={"fill-parent"}
           >
-            <Text>{note.comment}</Text>
+            <Text fontSize={20}>{note.comment}</Text>
           </AutoLayout>
           <AutoLayout
             spacing={24}
@@ -149,6 +150,7 @@ function Widget() {
               italic
               fill={"#007bff"}
               fontWeight="bold"
+              fontSize={32}
             >
               Link to Note
             </Text>
