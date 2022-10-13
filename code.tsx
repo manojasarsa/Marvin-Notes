@@ -1,6 +1,4 @@
-// This widget will open an Iframe window with buttons to show a toast message and close the window.
-
-const { widget } = figma;
+const { getNodeById, widget } = figma;
 const {
   useEffect,
   useSyncedState,
@@ -14,45 +12,25 @@ const {
 interface Note {
   title: string;
   comment: string;
-  id: number;
+  id: string;
   key: string;
 }
 
 function Widget() {
-  const [notes, setNotes] = useSyncedState<Note[]>("sticky-notes", []);
   const [open, setOpen] = useSyncedState<boolean>("open-widget", true);
+
+  const [note] = useSyncedState("note", {
+    title: "",
+    comment: "",
+    id: "",
+    key: "",
+  });
 
   const [showMore, setShowMore] = useSyncedState("open-comment", {});
 
   const widgetId = useWidgetId();
 
-  useEffect(() => {
-    figma.ui.on("message", (msg) => {
-      if (msg.type === "create-notes") {
-        figma.notify("Fetching notes...");
-        setOpen(false);
-        setNotes(msg.notes);
-
-        figma.closePlugin();
-      }
-      if (msg.type === "close") {
-        figma.closePlugin();
-      }
-    });
-  });
-
   console.log("open", open);
-  console.log("notes", notes);
-
-  useEffect(() => {
-    for (let i = 0; i < notes.length; i++) {
-      const widgetNode = figma.getNodeById(widgetId) as WidgetNode;
-      const clonedWidget = widgetNode.clone();
-
-      widgetNode.parent!.appendChild(clonedWidget);
-      clonedWidget.x = (i + 5) * 1000;
-    }
-  });
 
   return open ? (
     <AutoLayout
@@ -80,13 +58,43 @@ function Widget() {
         width={"hug-contents"}
         height={"hug-contents"}
         horizontalAlignItems="center"
-        onClick={
-          // Use async callbacks or return a promise to keep the Iframe window
-          // opened. Resolving the promise, closing the Iframe window, or calling
-          () =>
-            new Promise((resolve) => {
-              figma.showUI(__html__);
-            })
+        onClick={() =>
+          new Promise((resolve) => {
+            figma.showUI(__html__);
+            figma.ui.on("message", (msg) => {
+              if (msg.type === "create-notes") {
+                figma.notify("Fetching notes...");
+                setOpen(false);
+
+                let column = 0;
+                let row = 0;
+
+                for (let i = 0; i < msg.notes.length; i++) {
+                  const originalNode = figma.getNodeById(
+                    widgetId
+                  ) as WidgetNode;
+                  const clonedWidget = originalNode.cloneWidget({
+                    note: msg.notes[i],
+                  });
+
+                  if (row === 5) {
+                    row = 0;
+                    column = column + 1;
+                    clonedWidget.x = row * 1000;
+                    clonedWidget.y = column * 1000;
+                  } else {
+                    clonedWidget.x = row * 1000;
+                    row = row + 1;
+                    clonedWidget.y = column * 1000;
+                  }
+                }
+                figma.closePlugin();
+              }
+              if (msg.type === "close") {
+                figma.closePlugin();
+              }
+            });
+          })
         }
       >
         <Text
@@ -112,46 +120,44 @@ function Widget() {
         spacing={48}
         direction="vertical"
         width={800}
-        // height={
-        //   showMore[note.id as keyof object]
-        //     ? note.comment.length < 600
-        //       ? 400
-        //       : note.comment.length < 1000
-        //       ? 600
-        //       : note.comment.length < 10000
-        //       ? 1000
-        //       : "hug-contents"
-        //     : 400
-        // }
-        height={400}
+        height={
+          showMore[note.id as keyof object]
+            ? note.comment.length < 600
+              ? 400
+              : note.comment.length < 1000
+              ? 600
+              : note.comment.length < 10000
+              ? 1000
+              : "hug-contents"
+            : 400
+        }
         strokeWidth={2}
         fill={"#f7f8fa"}
         hoverStyle={{ stroke: "#dce0e6", fill: "#fb3569" }}
         stroke="#dce0e6"
         strokeAlign="center"
-        // key={note.id}
+        key={note.id}
         name="a"
       >
         <AutoLayout
-          // padding={
-          //   note[i].comment.length < 300
-          //     ? {
-          //         horizontal: 48,
-          //         vertical: 16,
-          //       }
-          //     : {
-          //         horizontal: 24,
-          //         vertical: 8,
-          //       }
-          // }
+          padding={
+            note.comment.length < 300
+              ? {
+                  horizontal: 48,
+                  vertical: 16,
+                }
+              : {
+                  horizontal: 24,
+                  vertical: 8,
+                }
+          }
           spacing={24}
           width={"fill-parent"}
           height={"fill-parent"}
           direction="vertical"
         >
           <Text fontSize={32} width={"fill-parent"}>
-            {/* {note.title} */}
-            Title
+            {note.title}
           </Text>
           <AutoLayout
             padding={{
@@ -164,46 +170,42 @@ function Widget() {
             spacing={8}
           >
             <Text
-              // fontSize={
-              //   showMore[note.id as keyof object]
-              //     ? note.comment.length < 600
-              //       ? 20
-              //       : note.comment.length < 1000
-              //       ? 16
-              //       : note.comment.length < 10000
-              //       ? 12
-              //       : 10
-              //     : 20
-              // }
+              fontSize={
+                showMore[note.id as keyof object]
+                  ? note.comment.length < 600
+                    ? 20
+                    : note.comment.length < 1000
+                    ? 16
+                    : note.comment.length < 10000
+                    ? 12
+                    : 10
+                  : 20
+              }
               width={"fill-parent"}
             >
-              {/* {showMore[note.id as keyof object]
-                  ? note.comment
-                  : note.comment.slice(0, 501)} */}
-              Comment
+              {showMore[note.id as keyof object]
+                ? note.comment
+                : note.comment.slice(0, 501)}
             </Text>
             <Text
-              // onClick={() =>
-              //   new Promise((resolve) => {
-              //     setShowMore((comment) =>
-              //       comment[note.id as keyof object]
-              //         ? { ...comment, [note.id]: false }
-              //         : { ...comment, [note.id]: true }
-              //     );
-              //   })
-              // }
+              onClick={() => {
+                setShowMore((comment) =>
+                  comment[note.id as keyof object]
+                    ? { ...comment, [note.id]: false }
+                    : { ...comment, [note.id]: true }
+                );
+              }}
               fill={"#fb3569"}
             >
-              {/* {note.comment.length > 500
-                  ? showMore[note.id as keyof object]
-                    ? "Show Less"
-                    : "Show More"
-                  : ""} */}
-              Show More
+              {note.comment.length > 500
+                ? showMore[note.id as keyof object]
+                  ? "Show Less"
+                  : "Show More"
+                : ""}
             </Text>
           </AutoLayout>
           <Text
-            // href={`https://app.heymarvin.com/annotation_tool/event/${note.key}`}
+            href={`https://app.heymarvin.com/annotation_tool/event/${note.key}`}
             italic
             fill={"#007bff"}
             fontWeight="bold"
